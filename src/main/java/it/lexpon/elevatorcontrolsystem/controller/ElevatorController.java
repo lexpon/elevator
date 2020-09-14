@@ -37,7 +37,7 @@ public class ElevatorController {
 	@PostMapping("/step")
 	public void performStep() {
 		log.info("Received step request");
-		// TODO implement me
+		elevatorService.performOneTimeStep();
 	}
 
 }

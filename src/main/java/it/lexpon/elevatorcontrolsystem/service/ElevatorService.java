@@ -46,7 +46,12 @@ public class ElevatorService {
 
 	public void pickup(PickupRequest pickupRequest) {
 		pickupRequests.add(pickupRequest);
-		// TODO find free elevator for pickupRequest
+		// TODO this is hacky. need to find the "optimal" elevator
+		elevators.get(0).addRequest(pickupRequest);
 	}
 
+
+	public void performOneTimeStep() {
+		elevators.forEach(Elevator::performMove);
+	}
 }
