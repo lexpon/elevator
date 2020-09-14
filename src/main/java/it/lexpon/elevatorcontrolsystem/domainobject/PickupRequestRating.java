@@ -1,5 +1,7 @@
 package it.lexpon.elevatorcontrolsystem.domainobject;
 
+import static it.lexpon.elevatorcontrolsystem.domainobject.Elevator.*;
+
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -25,10 +27,10 @@ public class PickupRequestRating implements Comparable<PickupRequestRating> {
 			weight = weight - 1;
 		}
 		else if (!sameDirection) {
-			weight = weight - Elevator.MAX_FLOOR_NUMBER;
+			weight = weight - MAX_FLOOR_NUMBER;
 		}
 		if (numberOfPickupRequestsOpen != null) {
-			weight = weight + numberOfPickupRequestsOpen * 3;
+			weight = weight + numberOfPickupRequestsOpen * 5;
 		}
 		if (numberOfPickupRequestsInProgress != null) {
 			weight = weight + numberOfPickupRequestsInProgress * 2;
