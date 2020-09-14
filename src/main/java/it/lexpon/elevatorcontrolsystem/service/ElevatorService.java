@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ElevatorService {
 
 	private final static Integer MAX_ELEVATORS = 16;
+	private final static Integer MAX_PICKUP_REQUESTS = 100;
 
 	private final List<Integer> elevatorIds;
 	private final List<PickupRequest> pickupRequests;
@@ -58,12 +59,23 @@ public class ElevatorService {
 
 
 	public void pickup(PickupRequest pickupRequest) {
-		// TODO add maximum number of open pickupRequests
+		if (pickupRequests.size() > MAX_PICKUP_REQUESTS) {
+			throw new IllegalStateException(String.format("Too many pickupRequests. Can handle maximum %d requests.", MAX_PICKUP_REQUESTS));
+		}
 		pickupRequests.add(pickupRequest);
+		assignPickupRequests();
 	}
 
 
 	public void performOneTimeStep() {
+		assignPickupRequests();
+		log.info("Performing one time step for each elevator");
+		elevators.forEach(Elevator::performOneTimeStep);
+	}
+
+
+	private void assignPickupRequests() {
+		log.info("Trying to assign pickupRequests to elevators");
 
 		List<PickupRequest> requestsAssigned = new ArrayList<>();
 
@@ -82,9 +94,6 @@ public class ElevatorService {
 			});
 
 		pickupRequests.removeAll(requestsAssigned);
-
-		log.info("Performing one time step for each elevator");
-		elevators.forEach(Elevator::performOneTimeStep);
 	}
 
 
@@ -99,7 +108,6 @@ public class ElevatorService {
 			})
 			.sorted(Comparator.comparingInt(ElevatorRated::getWeight))
 			.filter(elevatorRated -> elevatorRated.getWeight() >= 0)
-			// TODO improve filtering. is there anything better than checking if the request was already assigned?
 			.filter(elevatorRated -> !elevatorRated.getElevator().getPickupRequestsOpen().contains(pickupRequest))
 			.findFirst();
 	}
