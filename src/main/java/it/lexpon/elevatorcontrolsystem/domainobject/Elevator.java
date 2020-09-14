@@ -96,6 +96,14 @@ public class Elevator {
 			return;
 		}
 
+		if (direction == NONE && !pickupRequestsInProgress.isEmpty()) {
+			Direction newDirection = pickupRequestsInProgress.get(0).determineDirection();
+			log.info("Elevator was standing still, but there are still pickupRequests in progress. Start moving elevator again. elevator={}, newDirection={}",
+				this, newDirection);
+			changeDirection(newDirection);
+			return;
+		}
+
 		if (direction == NONE) {
 			PickupRequest pickupRequest = getTopPickupRequest()
 				.orElseThrow(() -> new RuntimeException(String.format("Cannot move elevator. There are no pickpRequests available. elevator=%s", this)));
@@ -114,12 +122,24 @@ public class Elevator {
 		if (direction == UP) {
 			log.info("Moving elevator up. elevator={}", this);
 			floorUp();
+			List<PickupRequest> pickupRequests = otherPickupRequestsAtCurrentFloorWithSameDirection();
+			if (!pickupRequests.isEmpty()) {
+				log.info("There are other pickupRequests with current Floor. Taking them as well. elevator={}, pickupRequests={}", this, pickupRequests);
+				pickupRequestsInProgress.addAll(pickupRequests);
+				pickupRequestsReceived.removeAll(pickupRequests);
+			}
 			return;
 		}
 
 		if (direction == DOWN) {
 			log.info("Moving elevator down. elevator={}", this);
 			floorDown();
+			List<PickupRequest> pickupRequests = otherPickupRequestsAtCurrentFloorWithSameDirection();
+			if (!pickupRequests.isEmpty()) {
+				log.info("There are other pickupRequests with current Floor. Taking them as well. elevator={}, pickupRequests={}", this, pickupRequests);
+				pickupRequestsInProgress.addAll(pickupRequests);
+				pickupRequestsReceived.removeAll(pickupRequests);
+			}
 			return;
 		}
 
@@ -129,6 +149,14 @@ public class Elevator {
 	private List<PickupRequest> getFinishedPickupRequests() {
 		return pickupRequestsInProgress.stream()
 			.filter(pickupRequest -> pickupRequest.getDestinationFloor().equals(getCurrentFloor()))
+			.collect(toList());
+	}
+
+
+	private List<PickupRequest> otherPickupRequestsAtCurrentFloorWithSameDirection() {
+		return pickupRequestsReceived.stream()
+			.filter(pickupRequest -> pickupRequest.getCurrentFloor().equals(getCurrentFloor()))
+			.filter(pickupRequest -> pickupRequest.determineDirection().equals(getDirection()))
 			.collect(toList());
 	}
 }
