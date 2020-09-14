@@ -19,7 +19,7 @@ public class ElevatorServiceTest {
 	private final ElevatorService testee = new ElevatorService(elevatorIds);
 
 	@Test
-	public void shouldAcceptPickupRequest() {
+	public void shouldAcceptAndAssignPickupRequest() {
 		// GIVEN
 		PickupRequest request = PickupRequest.builder()
 			.currentFloor(1)
