@@ -45,6 +45,16 @@ public class Elevator {
 	}
 
 
+	private boolean hasRequestsInProgress() {
+		return pickupRequestsInProgress.size() > 0;
+	}
+
+
+	private boolean hasRequestsOpen() {
+		return pickupRequestsOpen.size() > 0;
+	}
+
+
 	public PickupRequestRating ratePickupRequest(PickupRequest pickupRequest) {
 		return PickupRequestRating.builder()
 			.floorDistance(Math.abs(currentFloor - pickupRequest.getCurrentFloor()))
@@ -85,106 +95,123 @@ public class Elevator {
 	}
 
 
-	public boolean performOneTimeStep() {
-		if (handleFinishedPickupRequests())
-			return true;
-		if (handlePickupRequestsInProgress())
-			return true;
-		if (handlePickupRequestsOpen())
-			return true;
-		if (handleDirectionUp())
-			return true;
-		return handleDirectionDown();
-	}
+	public void performOneTimeStep() {
 
+		switch (direction) {
+			case NONE:
+				// elevator standing still
+				checkForOpenRequests();
+				break;
+			case NONE_CONTINUE_UP:
+				// elevator standing to let passenger enter or exit. continue up afterwards
+				changeDirection(UP);
+				moveUpOrDown();
+				break;
+			case NONE_CONTINUE_DOWN:
+				// elevator standing to let passenger enter or exit. continue down afterwards
+				changeDirection(DOWN);
+				moveUpOrDown();
+				break;
+			case UP:
+			case DOWN:
+				// elevator moving up or down
+				List<PickupRequest> reachedRequests = reachedRequests();
+				List<PickupRequest> similarRequests = similarRequests();
+				if (reachedRequests.size() > 0) {
+					log.info("Floor reached for requests. elevator={}, requests={}", this, reachedRequests);
+					pickupRequestsInProgress.removeAll(reachedRequests);
+				}
+				if (similarRequests.size() > 0) {
+					log.info("There are similar requests. elevator={}, requests={}", this, similarRequests);
+					pickupRequestsInProgress.addAll(similarRequests);
+					pickupRequestsOpen.removeAll(similarRequests);
+				}
+				if (reachedRequests.size() > 0 || similarRequests.size() > 0) {
+					stopElevator();
+				}
+				else {
+					moveUpOrDown();
+				}
 
-	private boolean handleDirectionDown() {
-		if (direction == DOWN) {
-			log.info("Moving elevator down. elevator={}", this);
-			floorDown();
-			handleSimilarPickupRequests();
-			return true;
+				break;
 		}
-		return false;
+
 	}
 
 
-	private boolean handleDirectionUp() {
-		if (direction == UP) {
-			log.info("Moving elevator up. elevator={}", this);
-			floorUp();
-			handleSimilarPickupRequests();
-			return true;
+	private void checkForOpenRequests() {
+		if (hasRequestsOpen()) {
+			PickupRequest request = pickupRequestsOpen.get(0);
+			if (request.getCurrentFloor().equals(currentFloor)) {
+				log.info("Elevator is at the same floor as the request. Let passenger enter. elevator={}, request={}", this, request);
+				pickupRequestsInProgress.add(request);
+				pickupRequestsOpen.remove(request);
+				changeDirection(request.determineDirection());
+			}
+			else if (currentFloor < request.getCurrentFloor()) {
+				log.info("Elevator is below the requested floor. changing direction to move up. elevator={}, request={}", this, request);
+				changeDirection(UP);
+			}
+			else if (currentFloor > request.getCurrentFloor()) {
+				log.info("Elevator is above the requested floor. changing direction to move up. elevator={}, request={}", this, request);
+				changeDirection(DOWN);
+			}
 		}
-		return false;
 	}
 
 
-	private void handleSimilarPickupRequests() {
-		List<PickupRequest> pickupRequests = otherPickupRequestsAtCurrentFloorWithSameDirection();
-		if (!pickupRequests.isEmpty()) {
-			log.info("There are other pickupRequests with current floor and same direction. Taking them as well. elevator={}, pickupRequests={}", this,
-				pickupRequests);
-			pickupRequestsInProgress.addAll(pickupRequests);
-			pickupRequestsOpen.removeAll(pickupRequests);
+	private void moveUpOrDown() {
+		switch (direction) {
+			case UP:
+			case NONE_CONTINUE_UP:
+				floorUp();
+				break;
+			case DOWN:
+			case NONE_CONTINUE_DOWN:
+				floorDown();
+				break;
 		}
 	}
 
 
-	private boolean handlePickupRequestsOpen() {
-		if (direction == NONE && pickupRequestsOpen.size() > 0) {
-			PickupRequest pickupRequest = pickupRequestsOpen.stream()
-				.findFirst()
-				.orElseThrow(() -> new RuntimeException(String.format("Cannot move elevator. There are no pickpRequests available. elevator=%s", this)));
-
-			log.info("Adding pickupRequest to elevator={}, pickupRequest={}", this, pickupRequest);
-			pickupRequestsInProgress.add(pickupRequest);
-			pickupRequestsOpen.remove(pickupRequest);
-
-			Direction newDirection = pickupRequest.determineDirection();
-			changeDirection(newDirection);
-
-			return true;
-		}
-		return false;
-	}
-
-
-	private boolean handlePickupRequestsInProgress() {
-		if (direction == NONE && !pickupRequestsInProgress.isEmpty()) {
-			Direction newDirection = pickupRequestsInProgress.get(0).determineDirection();
-			log.info("Elevator was standing still, but there are still pickupRequests in progress. Start moving elevator again. elevator={}, newDirection={}",
-				this, newDirection);
-			changeDirection(newDirection);
-			return true;
-		}
-		return false;
-	}
-
-
-	private boolean handleFinishedPickupRequests() {
-		List<PickupRequest> finishedPickupRequests = getFinishedPickupRequests();
-		if (!finishedPickupRequests.isEmpty()) {
-			log.info("PickupRequests finished. Stop elevator and let passenger exit. elevator={}, finishedPickupRequest={}", this, finishedPickupRequests);
-			changeDirection(NONE);
-			pickupRequestsInProgress.removeAll(finishedPickupRequests);
-			return true;
-		}
-		return false;
-	}
-
-
-	private List<PickupRequest> getFinishedPickupRequests() {
+	private List<PickupRequest> reachedRequests() {
 		return pickupRequestsInProgress.stream()
-			.filter(pickupRequest -> pickupRequest.getDestinationFloor().equals(getCurrentFloor()))
+			.filter(req -> currentFloor.equals(req.getDestinationFloor()))
 			.collect(toList());
 	}
 
 
-	private List<PickupRequest> otherPickupRequestsAtCurrentFloorWithSameDirection() {
+	private List<PickupRequest> similarRequests() {
 		return pickupRequestsOpen.stream()
-			.filter(pickupRequest -> pickupRequest.getCurrentFloor().equals(getCurrentFloor()))
-			.filter(pickupRequest -> pickupRequest.determineDirection().equals(getDirection()))
+			.filter(req -> {
+				boolean sameFloor = currentFloor.equals(req.getCurrentFloor());
+				boolean sameDirection = direction == req.determineDirection();
+				if (hasRequestsInProgress()) {
+					return sameFloor && sameDirection;
+				}
+				return sameFloor;
+			})
 			.collect(toList());
 	}
+
+
+	private void stopElevator() {
+		// not all requests done. keep direction after stopping elevator.
+		if (hasRequestsInProgress()) {
+			switch (pickupRequestsInProgress.get(0).determineDirection()) {
+				case UP:
+					changeDirection(NONE_CONTINUE_UP);
+					break;
+				case DOWN:
+					changeDirection(NONE_CONTINUE_DOWN);
+					break;
+			}
+		}
+
+		// all requests done. stop elevator completely.
+		else {
+			changeDirection(NONE);
+		}
+	}
+
 }

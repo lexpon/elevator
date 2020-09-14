@@ -105,7 +105,7 @@ public class ElevatorTest {
 
 
 	@Test
-	public void shouldMoveAfterFirstPickupRequestAssignment() {
+	public void shouldHandleUpRequest() {
 		// GIVEN
 		Integer id = 1;
 		Elevator elevator = Elevator.create(id);
@@ -120,38 +120,131 @@ public class ElevatorTest {
 
 		// THEN ... should change direction to UP
 		assertThat(elevator.getDirection()).isEqualTo(UP);
-		assertThat(elevator.getPickupRequestsOpen()).isEmpty();
-		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
-		assertThat(elevator.getPickupRequestsInProgress().get(0)).isEqualTo(pickupRequest);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
 
 		// WHEN
 		elevator.performOneTimeStep();
 
-		// THEN ... should move one floor up
+		// THEN ... should move one floor up to 1st floor
 		assertThat(elevator.getDirection()).isEqualTo(UP);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
 
 		// WHEN
 		elevator.performOneTimeStep();
 
-		// THEN ... should move one floor up
+		// THEN ... should stop at 1st floor and accept request
+		assertThat(elevator.getCurrentFloor()).isEqualTo(1);
+		assertThat(elevator.getDirection()).isEqualTo(NONE_CONTINUE_UP);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN ... should move to 2nd floor
 		assertThat(elevator.getDirection()).isEqualTo(UP);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(2);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
 		elevator.performOneTimeStep();
 
-		// THEN ... should move one floor up to destination floor
+		// THEN ... should move to 3nd floor
 		assertThat(elevator.getDirection()).isEqualTo(UP);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(3);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
 		elevator.performOneTimeStep();
 
-		// THEN ... should stop in destination floor
+		// THEN ... should stop at 3rd floor
 		assertThat(elevator.getDirection()).isEqualTo(NONE);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(3);
-		assertThat(elevator.getPickupRequestsInProgress()).isEmpty();
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
+	}
+
+
+	@Test
+	public void shouldHandleDownRequest() {
+		// GIVEN
+		Integer id = 1;
+		Elevator elevator = Elevator.create(id);
+		elevator.changeFloor(3);
+		PickupRequest pickupRequest = PickupRequest.builder()
+			.currentFloor(5)
+			.destinationFloor(3)
+			.build();
+		elevator.addRequest(pickupRequest);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN
+		assertThat(elevator.getDirection()).isEqualTo(UP);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(3);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN
+		assertThat(elevator.getDirection()).isEqualTo(UP);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(4);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN
+		assertThat(elevator.getDirection()).isEqualTo(UP);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(5);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN
+		assertThat(elevator.getDirection()).isEqualTo(NONE_CONTINUE_DOWN);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(5);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN
+		assertThat(elevator.getDirection()).isEqualTo(DOWN);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(4);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN
+		assertThat(elevator.getDirection()).isEqualTo(DOWN);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(3);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN
+		assertThat(elevator.getDirection()).isEqualTo(NONE);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(3);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
 	}
 
 
@@ -178,21 +271,41 @@ public class ElevatorTest {
 		// THEN ... should take 1st pickupRequest and change direction to DOWN
 		assertThat(elevator.getDirection()).isEqualTo(DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(10);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(2);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN ... should move one floor down to 9th floor
+		assertThat(elevator.getDirection()).isEqualTo(DOWN);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(9);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(2);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
+
+		// WHEN
+		elevator.performOneTimeStep();
+
+		// THEN ... should assign 1st request
+		assertThat(elevator.getDirection()).isEqualTo(NONE_CONTINUE_DOWN);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(9);
 		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
 		elevator.performOneTimeStep();
 
-		// THEN ... should move one floor down
+		// THEN ... should move one floor down to 8th floor
 		assertThat(elevator.getDirection()).isEqualTo(DOWN);
-		assertThat(elevator.getCurrentFloor()).isEqualTo(9);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(8);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
 		elevator.performOneTimeStep();
 
-		// THEN ... should move one floor down and take the 2nd pickupRequest, because this one is at floor #9 and goes down as well
-		assertThat(elevator.getDirection()).isEqualTo(DOWN);
+		// THEN ... should assign 2nd request
+		assertThat(elevator.getDirection()).isEqualTo(NONE_CONTINUE_DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(8);
 		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(2);
@@ -210,16 +323,7 @@ public class ElevatorTest {
 		elevator.performOneTimeStep();
 
 		// THEN ... should stop at 7th floor and finish one pickupRequest
-		assertThat(elevator.getDirection()).isEqualTo(NONE);
-		assertThat(elevator.getCurrentFloor()).isEqualTo(7);
-		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
-		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
-
-		// WHEN
-		elevator.performOneTimeStep();
-
-		// THEN ... should change direction to DOWN again
-		assertThat(elevator.getDirection()).isEqualTo(DOWN);
+		assertThat(elevator.getDirection()).isEqualTo(NONE_CONTINUE_DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(7);
 		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
