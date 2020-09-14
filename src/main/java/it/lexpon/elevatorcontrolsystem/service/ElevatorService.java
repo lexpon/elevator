@@ -1,7 +1,10 @@
 package it.lexpon.elevatorcontrolsystem.service;
 
+import static it.lexpon.elevatorcontrolsystem.domainobject.Elevator.*;
+import static java.math.BigInteger.*;
 import static java.util.stream.Collectors.*;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,11 +30,13 @@ public class ElevatorService {
 	private final List<Integer> elevatorIds;
 	private final List<PickupRequest> pickupRequests;
 	private final List<Elevator> elevators;
+	private BigInteger timeStep;
 
 	public ElevatorService(@Value("${elevator.ids}") List<Integer> elevatorIds) {
 		this.elevatorIds = elevatorIds;
 		this.pickupRequests = new ArrayList<>();
 		this.elevators = init();
+		this.timeStep = ZERO;
 	}
 
 
@@ -53,14 +58,13 @@ public class ElevatorService {
 		return ElevatorStatusResponse.builder()
 			.elevators(elevators)
 			.pickupRequestsOpen(pickupRequests)
+			.timeStep(timeStep)
 			.build();
 	}
 
 
 	public void pickup(PickupRequest pickupRequest) {
-		int numberOfElevators = elevators.size();
-		int numberOfMaxOpenRequestsPerElevator = Elevator.MAX_OPEN_PICKUP_REQUESTS;
-		int maxOpenRequests = numberOfElevators * numberOfMaxOpenRequestsPerElevator;
+		int maxOpenRequests = elevators.size() * MAX_OPEN_PICKUP_REQUESTS;
 		if (pickupRequests.size() >= maxOpenRequests) {
 			throw new IllegalStateException(String.format("Too many pickupRequests. Can handle maximum %d requests.", maxOpenRequests));
 		}
@@ -73,6 +77,7 @@ public class ElevatorService {
 		assignPickupRequests();
 		log.info("Performing one time step for each elevator");
 		elevators.forEach(Elevator::performOneTimeStep);
+		timeStep = timeStep.add(ONE);
 	}
 
 
