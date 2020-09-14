@@ -2,6 +2,8 @@ package it.lexpon.elevatorcontrolsystem.datatransferobject;
 
 import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
 
+import java.util.UUID;
+
 import it.lexpon.elevatorcontrolsystem.domainobject.Direction;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -15,6 +17,7 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class PickupRequest {
 
+	private final UUID id = UUID.randomUUID();
 	private final Integer currentFloor;
 	private final Integer destinationFloor;
 

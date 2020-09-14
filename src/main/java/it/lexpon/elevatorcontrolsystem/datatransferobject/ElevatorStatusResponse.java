@@ -14,5 +14,6 @@ import lombok.ToString;
 public class ElevatorStatusResponse {
 
 	private final List<Elevator> elevators;
+	private final List<PickupRequest> pickupRequestsOpen;
 
 }

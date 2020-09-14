@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Elevator {
 
-	private static final int MAX_FLOOR_NUMBER = 10;
+	public static final int MAX_FLOOR_NUMBER = 10;
 
 	private final Integer id;
 	private Integer currentFloor;
@@ -42,6 +42,17 @@ public class Elevator {
 
 	public void addRequest(PickupRequest pickupRequest) {
 		pickupRequestsOpen.add(pickupRequest);
+	}
+
+
+	public PickupRequestRating ratePickupRequest(PickupRequest pickupRequest) {
+		return PickupRequestRating.builder()
+			.floorDistance(Math.abs(currentFloor - pickupRequest.getCurrentFloor()))
+			.sameDirection(direction == pickupRequest.determineDirection())
+			.elevatorStanding(direction == NONE)
+			.numberOfPickupRequestsOpen(pickupRequestsOpen.size())
+			.numberOfPickupRequestsInProgress(pickupRequestsInProgress.size())
+			.build();
 	}
 
 
@@ -74,7 +85,7 @@ public class Elevator {
 	}
 
 
-	public boolean performMove() {
+	public boolean performOneTimeStep() {
 		if (handleFinishedPickupRequests())
 			return true;
 		if (handlePickupRequestsInProgress())
@@ -121,7 +132,7 @@ public class Elevator {
 
 
 	private boolean handlePickupRequestsOpen() {
-		if (direction == NONE) {
+		if (direction == NONE && pickupRequestsOpen.size() > 0) {
 			PickupRequest pickupRequest = pickupRequestsOpen.stream()
 				.findFirst()
 				.orElseThrow(() -> new RuntimeException(String.format("Cannot move elevator. There are no pickpRequests available. elevator=%s", this)));
@@ -131,7 +142,6 @@ public class Elevator {
 			pickupRequestsOpen.remove(pickupRequest);
 
 			Direction newDirection = pickupRequest.determineDirection();
-			log.info("Changing direction for elevator={}. new direction={}", this, newDirection);
 			changeDirection(newDirection);
 
 			return true;
