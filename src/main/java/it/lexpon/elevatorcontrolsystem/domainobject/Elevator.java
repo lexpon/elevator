@@ -87,23 +87,53 @@ public class Elevator {
 	}
 
 
-	public void performMove() {
-		List<PickupRequest> finishedPickupRequests = getFinishedPickupRequests();
-		if (!finishedPickupRequests.isEmpty()) {
-			log.info("PickupRequests finished. Stop elevator and let passenger exit. elevator={}, finishedPickupRequest={}", this, finishedPickupRequests);
-			changeDirection(NONE);
-			pickupRequestsInProgress.removeAll(finishedPickupRequests);
-			return;
-		}
+	public boolean performMove() {
+		if (handleFinishedPickupRequests())
+			return true;
+		if (handlePickupRequestsInProgress())
+			return true;
+		if (handlePickupRequestsOpen())
+			return true;
+		if (handleDirectionUp())
+			return true;
+		return handleDirectionDown();
+	}
 
-		if (direction == NONE && !pickupRequestsInProgress.isEmpty()) {
-			Direction newDirection = pickupRequestsInProgress.get(0).determineDirection();
-			log.info("Elevator was standing still, but there are still pickupRequests in progress. Start moving elevator again. elevator={}, newDirection={}",
-				this, newDirection);
-			changeDirection(newDirection);
-			return;
-		}
 
+	private boolean handleDirectionDown() {
+		if (direction == DOWN) {
+			log.info("Moving elevator down. elevator={}", this);
+			floorDown();
+			handleSimilarPickupRequests();
+			return true;
+		}
+		return false;
+	}
+
+
+	private boolean handleDirectionUp() {
+		if (direction == UP) {
+			log.info("Moving elevator up. elevator={}", this);
+			floorUp();
+			handleSimilarPickupRequests();
+			return true;
+		}
+		return false;
+	}
+
+
+	private void handleSimilarPickupRequests() {
+		List<PickupRequest> pickupRequests = otherPickupRequestsAtCurrentFloorWithSameDirection();
+		if (!pickupRequests.isEmpty()) {
+			log.info("There are other pickupRequests with current floor and same direction. Taking them as well. elevator={}, pickupRequests={}", this,
+				pickupRequests);
+			pickupRequestsInProgress.addAll(pickupRequests);
+			pickupRequestsReceived.removeAll(pickupRequests);
+		}
+	}
+
+
+	private boolean handlePickupRequestsOpen() {
 		if (direction == NONE) {
 			PickupRequest pickupRequest = getTopPickupRequest()
 				.orElseThrow(() -> new RuntimeException(String.format("Cannot move elevator. There are no pickpRequests available. elevator=%s", this)));
@@ -116,33 +146,33 @@ public class Elevator {
 			log.info("Changing direction for elevator={}. new direction={}", this, newDirection);
 			changeDirection(newDirection);
 
-			return;
+			return true;
 		}
+		return false;
+	}
 
-		if (direction == UP) {
-			log.info("Moving elevator up. elevator={}", this);
-			floorUp();
-			List<PickupRequest> pickupRequests = otherPickupRequestsAtCurrentFloorWithSameDirection();
-			if (!pickupRequests.isEmpty()) {
-				log.info("There are other pickupRequests with current Floor. Taking them as well. elevator={}, pickupRequests={}", this, pickupRequests);
-				pickupRequestsInProgress.addAll(pickupRequests);
-				pickupRequestsReceived.removeAll(pickupRequests);
-			}
-			return;
+
+	private boolean handlePickupRequestsInProgress() {
+		if (direction == NONE && !pickupRequestsInProgress.isEmpty()) {
+			Direction newDirection = pickupRequestsInProgress.get(0).determineDirection();
+			log.info("Elevator was standing still, but there are still pickupRequests in progress. Start moving elevator again. elevator={}, newDirection={}",
+				this, newDirection);
+			changeDirection(newDirection);
+			return true;
 		}
+		return false;
+	}
 
-		if (direction == DOWN) {
-			log.info("Moving elevator down. elevator={}", this);
-			floorDown();
-			List<PickupRequest> pickupRequests = otherPickupRequestsAtCurrentFloorWithSameDirection();
-			if (!pickupRequests.isEmpty()) {
-				log.info("There are other pickupRequests with current Floor. Taking them as well. elevator={}, pickupRequests={}", this, pickupRequests);
-				pickupRequestsInProgress.addAll(pickupRequests);
-				pickupRequestsReceived.removeAll(pickupRequests);
-			}
-			return;
+
+	private boolean handleFinishedPickupRequests() {
+		List<PickupRequest> finishedPickupRequests = getFinishedPickupRequests();
+		if (!finishedPickupRequests.isEmpty()) {
+			log.info("PickupRequests finished. Stop elevator and let passenger exit. elevator={}, finishedPickupRequest={}", this, finishedPickupRequests);
+			changeDirection(NONE);
+			pickupRequestsInProgress.removeAll(finishedPickupRequests);
+			return true;
 		}
-
+		return false;
 	}
 
 
