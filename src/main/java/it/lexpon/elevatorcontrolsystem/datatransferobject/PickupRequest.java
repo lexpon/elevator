@@ -21,7 +21,7 @@ public class PickupRequest {
 	private final Integer currentFloor;
 	private final Integer destinationFloor;
 
-	public Direction determineDirection() {
+	public Direction direction() {
 		if (currentFloor.equals(destinationFloor)) {
 			throw new RuntimeException(String.format("Cannot determine direction, because floors are the same. pickupRequest=%s", this));
 		}

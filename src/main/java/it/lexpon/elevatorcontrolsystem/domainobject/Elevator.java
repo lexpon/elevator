@@ -62,7 +62,7 @@ public class Elevator {
 	public PickupRequestRating ratePickupRequest(PickupRequest pickupRequest) {
 		return PickupRequestRating.builder()
 			.floorDistance(Math.abs(currentFloor - pickupRequest.getCurrentFloor()))
-			.sameDirection(direction == pickupRequest.determineDirection())
+			.sameDirection(direction == pickupRequest.direction())
 			.elevatorStanding(direction == NONE)
 			.numberOfPickupRequestsOpen(pickupRequestsOpen.size())
 			.numberOfPickupRequestsInProgress(pickupRequestsInProgress.size())
@@ -150,7 +150,7 @@ public class Elevator {
 				log.info("Elevator is at the same floor as the request. Let passenger enter. elevator={}, request={}", this, request);
 				pickupRequestsInProgress.add(request);
 				pickupRequestsOpen.remove(request);
-				changeDirection(request.determineDirection());
+				changeDirection(request.direction());
 			}
 			else if (currentFloor < request.getCurrentFloor()) {
 				log.info("Elevator is below the requested floor. changing direction to move up. elevator={}, request={}", this, request);
@@ -189,7 +189,7 @@ public class Elevator {
 		return pickupRequestsOpen.stream()
 			.filter(req -> {
 				boolean sameFloor = currentFloor.equals(req.getCurrentFloor());
-				boolean sameDirection = direction == req.determineDirection();
+				boolean sameDirection = direction == req.direction();
 				if (hasRequestsInProgress()) {
 					return sameFloor && sameDirection;
 				}
@@ -202,7 +202,7 @@ public class Elevator {
 	private void stopElevator() {
 		// not all requests done. keep direction after stopping elevator.
 		if (hasRequestsInProgress()) {
-			switch (pickupRequestsInProgress.get(0).determineDirection()) {
+			switch (pickupRequestsInProgress.get(0).direction()) {
 				case UP:
 					changeDirection(NONE_CONTINUE_UP);
 					break;

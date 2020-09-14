@@ -20,7 +20,7 @@ public class PickupRequestTest {
 			.build();
 
 		// WHEN
-		Direction directionActual = pickupRequest.determineDirection();
+		Direction directionActual = pickupRequest.direction();
 
 		// THEN
 		assertThat(directionActual).isEqualTo(UP);
@@ -36,7 +36,7 @@ public class PickupRequestTest {
 			.build();
 
 		// WHEN
-		Direction directionActual = pickupRequest.determineDirection();
+		Direction directionActual = pickupRequest.direction();
 
 		// THEN
 		assertThat(directionActual).isEqualTo(DOWN);
@@ -54,7 +54,7 @@ public class PickupRequestTest {
 		// THEN 
 		Exception exception = assertThrows(RuntimeException.class,
 			// WHEN
-			pickupRequest::determineDirection);
+			pickupRequest::direction);
 
 		assertThat(exception.getMessage()).contains("Cannot determine direction, because floors are the same. pickupRequest=");
 	}
