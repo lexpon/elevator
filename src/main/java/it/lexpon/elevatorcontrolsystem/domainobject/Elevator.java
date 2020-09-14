@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Elevator {
 
-	public static final int MAX_FLOOR_NUMBER = 10;
+	public final static int MAX_FLOOR_NUMBER = 10;
+	private final static int MAX_OPEN_PICKUP_REQUESTS = 10;
 
 	private final Integer id;
 	private Integer currentFloor;
@@ -41,6 +42,9 @@ public class Elevator {
 
 
 	public void addRequest(PickupRequest pickupRequest) {
+		if (pickupRequestsOpen.size() >= MAX_OPEN_PICKUP_REQUESTS) {
+			throw new IllegalStateException(String.format("Too many pickupRequests for elevator. Can handle maximum %d requests.", MAX_OPEN_PICKUP_REQUESTS));
+		}
 		pickupRequestsOpen.add(pickupRequest);
 	}
 

@@ -2,6 +2,9 @@ package it.lexpon.elevatorcontrolsystem.domainobject;
 
 import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +46,23 @@ public class ElevatorTest {
 		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
 		PickupRequest pickupRequestReceived = elevator.getPickupRequestsOpen().get(0);
 		assertThat(pickupRequestReceived).isEqualTo(pickupRequestToSend);
+	}
+
+
+	@Test
+	public void shouldNotThrowExceptionWhenTooManyPickupRequests() {
+		// GIVEN
+		Integer id = 1;
+		Elevator elevator = Elevator.create(id);
+		PickupRequest pickupRequestToSend = PickupRequest.builder()
+			.currentFloor(1)
+			.destinationFloor(5)
+			.build();
+
+		// THEN 
+		Exception exception = assertThrows(IllegalStateException.class, () -> IntStream.range(0, 11).forEach(i -> elevator.addRequest(pickupRequestToSend)));
+
+		assertThat(exception.getMessage()).contains("Too many pickupRequests for elevator. Can handle maximum ");
 	}
 
 
