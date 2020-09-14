@@ -10,14 +10,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import it.lexpon.elevatorcontrolsystem.datatransferobject.ElevatorStatusResponse;
 import it.lexpon.elevatorcontrolsystem.datatransferobject.PickupRequest;
 import it.lexpon.elevatorcontrolsystem.domainobject.Elevator;
-import it.lexpon.elevatorcontrolsystem.domainobject.ElevatorRated;
-import it.lexpon.elevatorcontrolsystem.domainobject.PickupRequestRating;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -86,36 +85,26 @@ public class ElevatorService {
 
 		List<PickupRequest> requestsAssigned = new ArrayList<>();
 
-		pickupRequests.forEach(
-			pickupRequest -> {
-				Optional<ElevatorRated> elevatorForRequest = findElevatorForRequest(pickupRequest);
-				if (elevatorForRequest.isPresent()) {
-					Elevator elevator = elevatorForRequest.get().getElevator();
+		pickupRequests.forEach(pickupRequest -> findElevatorForRequest(pickupRequest)
+			.ifPresentOrElse(
+				elevator -> {
 					log.info("Assign pickupRequest to elevator. pickUpRequest={}, elevator={}", pickupRequest, elevator);
 					elevator.addRequest(pickupRequest);
 					requestsAssigned.add(pickupRequest);
-				}
-				else {
-					log.info("No suitable elevator found for pickupRequest. Waiting for one to be free. pickupRequest={}", pickupRequest);
-				}
-			});
+				},
+				() -> log.info("No suitable elevator found for pickupRequest. Waiting for one to be free. pickupRequest={}", pickupRequest)));
 
 		pickupRequests.removeAll(requestsAssigned);
 	}
 
 
-	private Optional<ElevatorRated> findElevatorForRequest(PickupRequest pickupRequest) {
+	private Optional<Elevator> findElevatorForRequest(PickupRequest pickupRequest) {
 		return elevators.stream()
-			.map(elevator -> {
-				PickupRequestRating pickupRequestRating = elevator.ratePickupRequest(pickupRequest);
-				return ElevatorRated.builder()
-					.elevator(elevator)
-					.pickupRequestRating(pickupRequestRating)
-					.build();
-			})
-			.sorted(Comparator.comparingInt(ElevatorRated::getWeight))
-			.filter(elevatorRated -> elevatorRated.getWeight() >= 0)
-			.filter(elevatorRated -> !elevatorRated.getElevator().getPickupRequestsOpen().contains(pickupRequest))
-			.findFirst();
+			.map(elevator -> Pair.of(elevator, elevator.ratePickupRequest(pickupRequest)))
+			.sorted(Comparator.comparingInt(pair -> pair.getRight().weight()))
+			.filter(pair -> pair.getRight().weight() >= 0)
+			.filter(pair -> !pair.getLeft().getPickupRequestsOpen().contains(pickupRequest))
+			.findFirst()
+			.map(Pair::getLeft);
 	}
 }
