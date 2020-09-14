@@ -24,7 +24,7 @@ public class ElevatorTest {
 		assertThat(elevatorActual.getId()).isEqualTo(id);
 		assertThat(elevatorActual.getCurrentFloor()).isEqualTo(0);
 		assertThat(elevatorActual.getDirection()).isEqualTo(NONE);
-		assertThat(elevatorActual.getPickupRequests()).isEmpty();
+		assertThat(elevatorActual.getPickupRequestsReceived()).isEmpty();
 	}
 
 
@@ -42,8 +42,8 @@ public class ElevatorTest {
 		elevator.addRequest(pickupRequestToSend);
 
 		// THEN
-		assertThat(elevator.getPickupRequests().size()).isEqualTo(1);
-		PickupRequest pickupRequestReceived = elevator.getPickupRequests().get(0);
+		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(1);
+		PickupRequest pickupRequestReceived = elevator.getPickupRequestsReceived().get(0);
 		assertThat(pickupRequestReceived).isEqualTo(pickupRequestToSend);
 	}
 
@@ -155,6 +155,57 @@ public class ElevatorTest {
 		boolean inMotion = elevator.isInMotion();
 
 		assertThat(inMotion).isFalse();
+	}
+
+
+	@Test
+	public void shouldMoveAfterFirstPickupRequestAssignment() {
+		// GIVEN
+		Integer id = 1;
+		Elevator elevator = Elevator.create(id);
+		PickupRequest pickupRequest = PickupRequest.builder()
+			.currentFloor(1)
+			.destinationFloor(3)
+			.build();
+		elevator.addRequest(pickupRequest);
+
+		// WHEN
+		elevator.performMove();
+
+		// THEN ... should change direction to UP
+		assertThat(elevator.getDirection()).isEqualTo(UP);
+		assertThat(elevator.getPickupRequestsReceived()).isEmpty();
+		assertThat(elevator.getPickupRequestsInProgress()).isNotEmpty();
+		assertThat(elevator.getPickupRequestsInProgress().get(0)).isEqualTo(pickupRequest);
+
+		// WHEN
+		elevator.performMove();
+
+		// THEN ... should move one floor up
+		assertThat(elevator.getDirection()).isEqualTo(UP);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(1);
+
+		// WHEN
+		elevator.performMove();
+
+		// THEN ... should move one floor up
+		assertThat(elevator.getDirection()).isEqualTo(UP);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(2);
+
+		// WHEN
+		elevator.performMove();
+
+		// THEN ... should move one floor up to destination floor
+		assertThat(elevator.getDirection()).isEqualTo(UP);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(3);
+
+		// WHEN
+		elevator.performMove();
+
+		// THEN ... should stop in destination floor
+		assertThat(elevator.getDirection()).isEqualTo(NONE);
+		assertThat(elevator.getCurrentFloor()).isEqualTo(3);
+		assertThat(elevator.getPickupRequestsInProgress()).isEmpty();
 	}
 
 }

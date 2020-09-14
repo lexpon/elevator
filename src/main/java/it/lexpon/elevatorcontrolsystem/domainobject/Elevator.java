@@ -1,6 +1,8 @@
 package it.lexpon.elevatorcontrolsystem.domainobject;
 
+import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
 import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.NONE;
+import static java.util.stream.Collectors.*;
 import static lombok.AccessLevel.*;
 
 import java.util.ArrayList;
@@ -21,31 +23,32 @@ import lombok.extern.slf4j.Slf4j;
 public class Elevator {
 
 	private static final int MAX_FLOOR_NUMBER = 10;
-	private static final int MAX_PLACES = 8;
 
 	private final Integer id;
 	private Integer currentFloor;
 	private Direction direction;
-	private final List<PickupRequest> pickupRequests;
+	private final List<PickupRequest> pickupRequestsReceived;
+	private final List<PickupRequest> pickupRequestsInProgress;
 
 	public static Elevator create(Integer id) {
 		return Elevator.builder()
 			.id(id)
 			.currentFloor(0)
 			.direction(NONE)
-			.pickupRequests(new ArrayList<>())
+			.pickupRequestsReceived(new ArrayList<>())
+			.pickupRequestsInProgress(new ArrayList<>())
 			.build();
 	}
 
 
 	public void addRequest(PickupRequest pickupRequest) {
-		pickupRequests.add(pickupRequest);
+		pickupRequestsReceived.add(pickupRequest);
 	}
 
 
 	public Optional<PickupRequest> getTopPickupRequest() {
-		return pickupRequests.size() > 0
-				? Optional.of(pickupRequests.get(0))
+		return pickupRequestsReceived.size() > 0
+				? Optional.of(pickupRequestsReceived.get(0))
 				: Optional.empty();
 	}
 
@@ -83,4 +86,49 @@ public class Elevator {
 		return direction != NONE;
 	}
 
+
+	public void performMove() {
+		List<PickupRequest> finishedPickupRequests = getFinishedPickupRequests();
+		if (!finishedPickupRequests.isEmpty()) {
+			log.info("PickupRequests finished. Stop elevator and let passenger exit. elevator={}, finishedPickupRequest={}", this, finishedPickupRequests);
+			changeDirection(NONE);
+			pickupRequestsInProgress.removeAll(finishedPickupRequests);
+			return;
+		}
+
+		if (direction == NONE) {
+			PickupRequest pickupRequest = getTopPickupRequest()
+				.orElseThrow(() -> new RuntimeException(String.format("Cannot move elevator. There are no pickpRequests available. elevator=%s", this)));
+
+			log.info("Adding pickupRequest to elevator={}, pickupRequest={}", this, pickupRequest);
+			pickupRequestsInProgress.add(pickupRequest);
+			pickupRequestsReceived.remove(pickupRequest);
+
+			Direction newDirection = pickupRequest.determineDirection();
+			log.info("Changing direction for elevator={}. new direction={}", this, newDirection);
+			changeDirection(newDirection);
+
+			return;
+		}
+
+		if (direction == UP) {
+			log.info("Moving elevator up. elevator={}", this);
+			floorUp();
+			return;
+		}
+
+		if (direction == DOWN) {
+			log.info("Moving elevator down. elevator={}", this);
+			floorDown();
+			return;
+		}
+
+	}
+
+
+	private List<PickupRequest> getFinishedPickupRequests() {
+		return pickupRequestsInProgress.stream()
+			.filter(pickupRequest -> pickupRequest.getDestinationFloor().equals(getCurrentFloor()))
+			.collect(toList());
+	}
 }
