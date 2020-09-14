@@ -35,9 +35,10 @@ public class ElevatorController {
 
 
 	@PostMapping("/step")
-	public void performStep() {
+	public ElevatorStatusResponse performStep() {
 		log.info("Received step request");
 		elevatorService.performOneTimeStep();
+		return elevatorService.getStatus();
 	}
 
 }

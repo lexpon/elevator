@@ -3,8 +3,6 @@ package it.lexpon.elevatorcontrolsystem.domainobject;
 import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
 import static org.assertj.core.api.Assertions.*;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 
 import it.lexpon.elevatorcontrolsystem.datatransferobject.PickupRequest;
@@ -24,7 +22,7 @@ public class ElevatorTest {
 		assertThat(elevatorActual.getId()).isEqualTo(id);
 		assertThat(elevatorActual.getCurrentFloor()).isEqualTo(0);
 		assertThat(elevatorActual.getDirection()).isEqualTo(NONE);
-		assertThat(elevatorActual.getPickupRequestsReceived()).isEmpty();
+		assertThat(elevatorActual.getPickupRequestsOpen()).isEmpty();
 	}
 
 
@@ -42,34 +40,9 @@ public class ElevatorTest {
 		elevator.addRequest(pickupRequestToSend);
 
 		// THEN
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(1);
-		PickupRequest pickupRequestReceived = elevator.getPickupRequestsReceived().get(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
+		PickupRequest pickupRequestReceived = elevator.getPickupRequestsOpen().get(0);
 		assertThat(pickupRequestReceived).isEqualTo(pickupRequestToSend);
-	}
-
-
-	@Test
-	public void shouldGetTopPickupRequest() {
-		// GIVEN
-		Integer id = 1;
-		Elevator elevator = Elevator.create(id);
-		PickupRequest pickupRequest1st = PickupRequest.builder()
-			.currentFloor(1)
-			.destinationFloor(5)
-			.build();
-		PickupRequest pickupRequest2nd = PickupRequest.builder()
-			.currentFloor(2)
-			.destinationFloor(3)
-			.build();
-		elevator.addRequest(pickupRequest1st);
-		elevator.addRequest(pickupRequest2nd);
-
-		// WHEN
-		Optional<PickupRequest> topPickupRequest = elevator.getTopPickupRequest();
-
-		// THEN
-		assertThat(topPickupRequest).isNotEmpty();
-		assertThat(topPickupRequest.get()).isEqualTo(pickupRequest1st);
 	}
 
 
@@ -132,33 +105,6 @@ public class ElevatorTest {
 
 
 	@Test
-	public void shouldBeInMotion() {
-		// GIVEN
-		Integer id = 1;
-		Elevator elevator = Elevator.create(id);
-		elevator.changeDirection(UP);
-
-		// WHEN
-		boolean inMotion = elevator.isInMotion();
-
-		assertThat(inMotion).isTrue();
-	}
-
-
-	@Test
-	public void shouldNotBeInMotion() {
-		// GIVEN
-		Integer id = 1;
-		Elevator elevator = Elevator.create(id);
-
-		// WHEN
-		boolean inMotion = elevator.isInMotion();
-
-		assertThat(inMotion).isFalse();
-	}
-
-
-	@Test
 	public void shouldMoveAfterFirstPickupRequestAssignment() {
 		// GIVEN
 		Integer id = 1;
@@ -174,7 +120,7 @@ public class ElevatorTest {
 
 		// THEN ... should change direction to UP
 		assertThat(elevator.getDirection()).isEqualTo(UP);
-		assertThat(elevator.getPickupRequestsReceived()).isEmpty();
+		assertThat(elevator.getPickupRequestsOpen()).isEmpty();
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 		assertThat(elevator.getPickupRequestsInProgress().get(0)).isEqualTo(pickupRequest);
 
@@ -232,7 +178,7 @@ public class ElevatorTest {
 		// THEN ... should take 1st pickupRequest and change direction to DOWN
 		assertThat(elevator.getDirection()).isEqualTo(DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(10);
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(1);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(1);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
@@ -248,7 +194,7 @@ public class ElevatorTest {
 		// THEN ... should move one floor down and take the 2nd pickupRequest, because this one is at floor #9 and goes down as well
 		assertThat(elevator.getDirection()).isEqualTo(DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(8);
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(2);
 
 		// WHEN
@@ -257,7 +203,7 @@ public class ElevatorTest {
 		// THEN ... should move one floor down
 		assertThat(elevator.getDirection()).isEqualTo(DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(7);
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(2);
 
 		// WHEN
@@ -266,7 +212,7 @@ public class ElevatorTest {
 		// THEN ... should stop at 7th floor and finish one pickupRequest
 		assertThat(elevator.getDirection()).isEqualTo(NONE);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(7);
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
@@ -275,7 +221,7 @@ public class ElevatorTest {
 		// THEN ... should change direction to DOWN again
 		assertThat(elevator.getDirection()).isEqualTo(DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(7);
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
@@ -284,7 +230,7 @@ public class ElevatorTest {
 		// THEN ... should move one floor down to 6th floor
 		assertThat(elevator.getDirection()).isEqualTo(DOWN);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(6);
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(1);
 
 		// WHEN
@@ -293,7 +239,7 @@ public class ElevatorTest {
 		// THEN ... should stop in 6th floor and finish the last pickupRequest
 		assertThat(elevator.getDirection()).isEqualTo(NONE);
 		assertThat(elevator.getCurrentFloor()).isEqualTo(6);
-		assertThat(elevator.getPickupRequestsReceived().size()).isEqualTo(0);
+		assertThat(elevator.getPickupRequestsOpen().size()).isEqualTo(0);
 		assertThat(elevator.getPickupRequestsInProgress().size()).isEqualTo(0);
 	}
 

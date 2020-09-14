@@ -7,7 +7,6 @@ import static lombok.AccessLevel.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import it.lexpon.elevatorcontrolsystem.datatransferobject.PickupRequest;
 import lombok.Builder;
@@ -27,7 +26,7 @@ public class Elevator {
 	private final Integer id;
 	private Integer currentFloor;
 	private Direction direction;
-	private final List<PickupRequest> pickupRequestsReceived;
+	private final List<PickupRequest> pickupRequestsOpen;
 	private final List<PickupRequest> pickupRequestsInProgress;
 
 	public static Elevator create(Integer id) {
@@ -35,21 +34,14 @@ public class Elevator {
 			.id(id)
 			.currentFloor(0)
 			.direction(NONE)
-			.pickupRequestsReceived(new ArrayList<>())
+			.pickupRequestsOpen(new ArrayList<>())
 			.pickupRequestsInProgress(new ArrayList<>())
 			.build();
 	}
 
 
 	public void addRequest(PickupRequest pickupRequest) {
-		pickupRequestsReceived.add(pickupRequest);
-	}
-
-
-	public Optional<PickupRequest> getTopPickupRequest() {
-		return pickupRequestsReceived.size() > 0
-				? Optional.of(pickupRequestsReceived.get(0))
-				: Optional.empty();
+		pickupRequestsOpen.add(pickupRequest);
 	}
 
 
@@ -79,11 +71,6 @@ public class Elevator {
 		}
 		log.info("Moving elevator one floor down. {}", this);
 		currentFloor--;
-	}
-
-
-	public boolean isInMotion() {
-		return direction != NONE;
 	}
 
 
@@ -128,19 +115,20 @@ public class Elevator {
 			log.info("There are other pickupRequests with current floor and same direction. Taking them as well. elevator={}, pickupRequests={}", this,
 				pickupRequests);
 			pickupRequestsInProgress.addAll(pickupRequests);
-			pickupRequestsReceived.removeAll(pickupRequests);
+			pickupRequestsOpen.removeAll(pickupRequests);
 		}
 	}
 
 
 	private boolean handlePickupRequestsOpen() {
 		if (direction == NONE) {
-			PickupRequest pickupRequest = getTopPickupRequest()
+			PickupRequest pickupRequest = pickupRequestsOpen.stream()
+				.findFirst()
 				.orElseThrow(() -> new RuntimeException(String.format("Cannot move elevator. There are no pickpRequests available. elevator=%s", this)));
 
 			log.info("Adding pickupRequest to elevator={}, pickupRequest={}", this, pickupRequest);
 			pickupRequestsInProgress.add(pickupRequest);
-			pickupRequestsReceived.remove(pickupRequest);
+			pickupRequestsOpen.remove(pickupRequest);
 
 			Direction newDirection = pickupRequest.determineDirection();
 			log.info("Changing direction for elevator={}. new direction={}", this, newDirection);
@@ -184,7 +172,7 @@ public class Elevator {
 
 
 	private List<PickupRequest> otherPickupRequestsAtCurrentFloorWithSameDirection() {
-		return pickupRequestsReceived.stream()
+		return pickupRequestsOpen.stream()
 			.filter(pickupRequest -> pickupRequest.getCurrentFloor().equals(getCurrentFloor()))
 			.filter(pickupRequest -> pickupRequest.determineDirection().equals(getDirection()))
 			.collect(toList());

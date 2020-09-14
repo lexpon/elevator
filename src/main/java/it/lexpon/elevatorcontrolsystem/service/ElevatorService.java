@@ -16,6 +16,8 @@ import it.lexpon.elevatorcontrolsystem.domainobject.Elevator;
 @Service
 public class ElevatorService {
 
+	private final static Integer MAX_ELEVATORS = 16;
+
 	private final List<Integer> elevatorIds;
 	private final List<PickupRequest> pickupRequests;
 	private final List<Elevator> elevators;
@@ -31,9 +33,13 @@ public class ElevatorService {
 		if (elevatorIds == null || elevatorIds.isEmpty()) {
 			throw new IllegalStateException("elevatorIds have to be set. check 'elevator.ids' in properties.");
 		}
-		return elevatorIds.stream()
+		List<Elevator> elevators = elevatorIds.stream()
 			.map(Elevator::create)
 			.collect(toList());
+		if (elevators.size() > MAX_ELEVATORS) {
+			throw new IllegalStateException(String.format("Too many elevators. Maximum of %d is allowed", MAX_ELEVATORS));
+		}
+		return elevators;
 	}
 
 
@@ -52,6 +58,8 @@ public class ElevatorService {
 
 
 	public void performOneTimeStep() {
+		// TODO assign pickupRequest to elevator if possible
+
 		elevators.forEach(Elevator::performMove);
 	}
 }
