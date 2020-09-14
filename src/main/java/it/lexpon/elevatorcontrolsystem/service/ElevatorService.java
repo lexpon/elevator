@@ -96,7 +96,7 @@ public class ElevatorService {
 					requestsAssigned.add(pickupRequest);
 				}
 				else {
-					log.info("No free elevator found for pickupRequest. Waiting for one to be free. pickupRequest={}", pickupRequest);
+					log.info("No suitable elevator found for pickupRequest. Waiting for one to be free. pickupRequest={}", pickupRequest);
 				}
 			});
 
