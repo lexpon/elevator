@@ -1,9 +1,12 @@
 package it.lexpon.elevatorcontrolsystem.controller;
 
+import java.util.stream.IntStream;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.lexpon.elevatorcontrolsystem.datatransferobject.ElevatorStatusResponse;
@@ -28,16 +31,20 @@ public class ElevatorController {
 
 
 	@PostMapping("pickup")
-	public void pickup(@RequestBody PickupRequest pickupRequest) {
-		log.info("Received pickupRequest={}", pickupRequest);
+	public ElevatorStatusResponse pickup(@RequestBody PickupRequest pickupRequest) {
 		elevatorService.pickup(pickupRequest);
+		return elevatorService.getStatus();
 	}
 
 
 	@PostMapping("/step")
-	public ElevatorStatusResponse performStep() {
-		log.info("Received step request");
-		elevatorService.performOneTimeStep();
+	public ElevatorStatusResponse performStep(@RequestParam(required = false, defaultValue = "1") Integer numberOfSteps) {
+		log.info("Received step request for {} steps", numberOfSteps);
+
+		IntStream
+			.range(0, numberOfSteps)
+			.forEach(step -> elevatorService.performOneTimeStep());
+
 		return elevatorService.getStatus();
 	}
 
