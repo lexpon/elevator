@@ -4,6 +4,7 @@ import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
 
 import it.lexpon.elevatorcontrolsystem.domainobject.Direction;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -11,6 +12,7 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString
+@EqualsAndHashCode
 public class PickupRequest {
 
 	private final Integer currentFloor;

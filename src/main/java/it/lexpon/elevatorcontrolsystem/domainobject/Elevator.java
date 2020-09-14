@@ -62,20 +62,20 @@ public class Elevator {
 
 
 	public void floorUp() {
-		if (currentFloor < MAX_FLOOR_NUMBER) {
-			log.info("Moving elevator one floor up. {}", this);
-			currentFloor++;
+		if (currentFloor >= MAX_FLOOR_NUMBER) {
+			throw new RuntimeException(String.format("Floor cannot be bigger than %d", MAX_FLOOR_NUMBER));
 		}
-		throw new RuntimeException(String.format("Floor cannot be bigger than %d", MAX_FLOOR_NUMBER));
+		log.info("Moving elevator one floor up. {}", this);
+		currentFloor++;
 	}
 
 
 	public void floorDown() {
-		if (currentFloor > 0) {
-			log.info("Moving elevator one floor down. {}", this);
-			currentFloor--;
+		if (currentFloor <= 0) {
+			throw new RuntimeException("Floor cannot get negative");
 		}
-		throw new RuntimeException("Floor cannot get negative");
+		log.info("Moving elevator one floor down. {}", this);
+		currentFloor--;
 	}
 
 
