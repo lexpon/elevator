@@ -1,6 +1,5 @@
 package it.lexpon.elevatorcontrolsystem.service;
 
-import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
 import static java.util.stream.Collectors.*;
 import static org.assertj.core.api.Assertions.*;
 
@@ -18,24 +17,6 @@ public class ElevatorServiceTest {
 	private final List<Integer> elevatorIds = List.of(16);
 
 	private final ElevatorService testee = new ElevatorService(elevatorIds);
-
-	@Test
-	public void shouldGetElevatorStatus() {
-		// GIVEN
-
-		// WHEN
-		ElevatorStatusResponse response = testee.getStatus();
-
-		// THEN
-		List<Elevator> elevators = response.getElevators();
-		assertThat(elevators.size()).isEqualTo(1);
-
-		Elevator expectedElevator = Elevator.create(1);
-		expectedElevator.changeDirection(NONE);
-		expectedElevator.changeFloor(0);
-		assertThat(elevators.get(0)).isEqualToComparingFieldByField(expectedElevator);
-	}
-
 
 	@Test
 	public void shouldAcceptPickupRequest() {
