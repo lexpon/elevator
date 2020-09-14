@@ -22,8 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ElevatorService {
 
-	private final static Integer MAX_ELEVATORS = 16;
-	private final static Integer MAX_PICKUP_REQUESTS = 100;
+	private final static int MAX_ELEVATORS = 16;
 
 	private final List<Integer> elevatorIds;
 	private final List<PickupRequest> pickupRequests;
@@ -59,8 +58,11 @@ public class ElevatorService {
 
 
 	public void pickup(PickupRequest pickupRequest) {
-		if (pickupRequests.size() > MAX_PICKUP_REQUESTS) {
-			throw new IllegalStateException(String.format("Too many pickupRequests. Can handle maximum %d requests.", MAX_PICKUP_REQUESTS));
+		int numberOfElevators = elevators.size();
+		int numberOfMaxOpenRequestsPerElevator = Elevator.MAX_OPEN_PICKUP_REQUESTS;
+		int maxOpenRequests = numberOfElevators * numberOfMaxOpenRequestsPerElevator;
+		if (pickupRequests.size() >= maxOpenRequests) {
+			throw new IllegalStateException(String.format("Too many pickupRequests. Can handle maximum %d requests.", maxOpenRequests));
 		}
 		pickupRequests.add(pickupRequest);
 		assignPickupRequests();

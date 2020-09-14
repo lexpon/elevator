@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Elevator {
 
 	public final static int MAX_FLOOR_NUMBER = 10;
-	private final static int MAX_OPEN_PICKUP_REQUESTS = 10;
+	public final static int MAX_OPEN_PICKUP_REQUESTS = 10;
 
 	private final Integer id;
 	private Integer currentFloor;
