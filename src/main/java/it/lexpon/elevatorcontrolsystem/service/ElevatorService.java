@@ -6,11 +6,9 @@ import static java.util.stream.Collectors.*;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -27,12 +25,18 @@ public class ElevatorService {
 	private final static int MAX_ELEVATORS = 16;
 
 	private final List<Integer> elevatorIds;
+	private final ElevatorPickupRequestRater elevatorPickupRequestRater;
+
 	private final List<PickupRequest> pickupRequests;
 	private final List<Elevator> elevators;
 	private BigInteger timeStep;
 
-	public ElevatorService(@Value("${elevator.ids}") List<Integer> elevatorIds) {
+	public ElevatorService(
+			@Value("${elevator.ids}") List<Integer> elevatorIds,
+			@Autowired ElevatorPickupRequestRater elevatorPickupRequestRater) {
 		this.elevatorIds = elevatorIds;
+		this.elevatorPickupRequestRater = elevatorPickupRequestRater;
+
 		this.pickupRequests = new ArrayList<>();
 		this.elevators = init();
 		this.timeStep = ZERO;
@@ -85,7 +89,7 @@ public class ElevatorService {
 
 		List<PickupRequest> requestsAssigned = new ArrayList<>();
 
-		pickupRequests.forEach(pickupRequest -> findElevatorForRequest(pickupRequest)
+		pickupRequests.forEach(pickupRequest -> elevatorPickupRequestRater.findElevatorForRequest(elevators, pickupRequest)
 			.ifPresentOrElse(
 				elevator -> {
 					log.info("Assign pickupRequest to elevator. pickUpRequest={}, elevator={}", pickupRequest, elevator);
@@ -97,14 +101,4 @@ public class ElevatorService {
 		pickupRequests.removeAll(requestsAssigned);
 	}
 
-
-	private Optional<Elevator> findElevatorForRequest(PickupRequest pickupRequest) {
-		return elevators.stream()
-			.map(elevator -> Pair.of(elevator, elevator.ratePickupRequest(pickupRequest)))
-			.sorted(Comparator.comparingInt(pair -> pair.getRight().weight()))
-			.filter(pair -> pair.getRight().weight() >= 0)
-			.filter(pair -> !pair.getLeft().getPickupRequestsOpen().contains(pickupRequest))
-			.findFirst()
-			.map(Pair::getLeft);
-	}
 }
