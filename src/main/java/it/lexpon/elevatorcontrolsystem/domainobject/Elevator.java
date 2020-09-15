@@ -10,6 +10,7 @@ import java.util.List;
 
 import it.lexpon.elevatorcontrolsystem.datatransferobject.PickupRequest;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder(access = PRIVATE)
 @Getter
 @ToString
+@EqualsAndHashCode
 @Slf4j
 public class Elevator {
 
