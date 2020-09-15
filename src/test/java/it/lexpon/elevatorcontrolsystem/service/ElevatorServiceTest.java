@@ -31,7 +31,7 @@ public class ElevatorServiceTest {
 
 		Elevator elevatorRated = testee.getStatus().getElevators().stream().findAny().orElseThrow(() -> new Exception("testee has no elevators"));
 
-		when(elevatorPickupRequestRaterMock.findElevatorForRequest(anyList(), any(PickupRequest.class)))
+		when(elevatorPickupRequestRaterMock.findElevatorForRequest(anyList(), eq(request)))
 			.thenReturn(Optional.of(elevatorRated));
 
 		// WHEN
@@ -39,14 +39,48 @@ public class ElevatorServiceTest {
 
 		// THEN
 		ElevatorStatusResponse status = testee.getStatus();
+		assertThat(status.getPickupRequestsOpen().size()).isEqualTo(0);
+
 		List<Elevator> elevatorsWithOpenRequests = status.getElevators().stream()
 			.filter(elevator -> elevator.getPickupRequestsOpen().size() > 0)
 			.collect(toList());
 		assertThat(elevatorsWithOpenRequests.size()).isEqualTo(1);
+
 		Elevator elevatorWithRequest = elevatorsWithOpenRequests.get(0);
 		assertThat(elevatorWithRequest).isEqualTo(elevatorRated);
 		assertThat(elevatorWithRequest.getPickupRequestsOpen().size()).isEqualTo(1);
 		assertThat(elevatorWithRequest.getPickupRequestsOpen().get(0)).isEqualTo(request);
+
+		verify(elevatorPickupRequestRaterMock, times(1)).findElevatorForRequest(anyList(), eq(request));
+		verifyNoMoreInteractions(elevatorPickupRequestRaterMock);
+	}
+
+
+	@Test
+	public void shouldNotAssignPickupRequestNoElevatorAvailable() {
+		// GIVEN
+		PickupRequest request = PickupRequest.builder()
+			.currentFloor(1)
+			.destinationFloor(5)
+			.build();
+
+		when(elevatorPickupRequestRaterMock.findElevatorForRequest(anyList(), any(PickupRequest.class)))
+			.thenReturn(Optional.empty());
+
+		// WHEN
+		testee.pickup(request);
+
+		// THEN
+		ElevatorStatusResponse status = testee.getStatus();
+		assertThat(status.getPickupRequestsOpen().size()).isEqualTo(1);
+
+		List<Elevator> elevatorsWithOpenRequests = status.getElevators().stream()
+			.filter(elevator -> elevator.getPickupRequestsOpen().size() > 0)
+			.collect(toList());
+		assertThat(elevatorsWithOpenRequests.size()).isEqualTo(0);
+
+		verify(elevatorPickupRequestRaterMock, times(1)).findElevatorForRequest(anyList(), eq(request));
+		verifyNoMoreInteractions(elevatorPickupRequestRaterMock);
 	}
 
 }
