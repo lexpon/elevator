@@ -94,4 +94,10 @@ curl --request POST 'localhost:8080/api/v1/elevator/step?numberOfSteps=10'
 - There is no instance that holds information about assigned requests. If one
   elevator would loose the information about a request, the request would be
   gone.
+- Distributing the pickup requests is basic and needs improvement.
+  - E.g.: Elevator is at floor 1 and has an assigned request "from 8 to 4" and
+    the elevator is moving up. When another request comes in "from 8 to 5" one
+    would think that it will get assigned to the same elevator. But this is
+    not the case yet because the logic in `PickupRequestRating` is not good
+    enough for it.
 - ... let's talk about it :-) ...
