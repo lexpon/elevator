@@ -4,6 +4,8 @@ import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import it.lexpon.elevatorcontrolsystem.domainobject.Direction;
@@ -44,18 +46,52 @@ public class PickupRequestTest {
 
 
 	@Test
-	public void shouldThrowExceptionWrongFloors() {
-		// GIVEN
-		PickupRequest pickupRequest = PickupRequest.builder()
-			.currentFloor(1)
-			.destinationFloor(1)
-			.build();
-
+	public void shouldThrowExceptionSameFloors() {
 		// THEN 
-		Exception exception = assertThrows(RuntimeException.class,
-			// WHEN
-			pickupRequest::direction);
+		Exception exception = assertThrows(IllegalStateException.class,
 
-		assertThat(exception.getMessage()).contains("Cannot determine direction, because floors are the same. pickupRequest=");
+			// WHEN
+			() -> PickupRequest.builder()
+				.currentFloor(1)
+				.destinationFloor(1).build());
+
+		assertThat(exception.getMessage()).contains("Floor numbers cannot be the same for pickupRequest ");
+	}
+
+
+	@Test
+	public void shouldThrowExceptionFloorsOutOfRange() {
+		// GIVEN
+		List<Integer> wrongFloors = List.of(-1, 11);
+
+		// ... current floor
+		wrongFloors.forEach(wrongFloor -> {
+
+			// THEN
+			Exception exception = assertThrows(IllegalStateException.class,
+
+				// WHEN
+				() -> PickupRequest.builder()
+					.currentFloor(wrongFloor)
+					.destinationFloor(1)
+					.build());
+
+			assertThat(exception.getMessage()).contains("Floor number has to be in range ");
+		});
+
+		// ... destination floor
+		wrongFloors.forEach(wrongFloor -> {
+
+			// THEN
+			Exception exception = assertThrows(IllegalStateException.class,
+
+				// WHEN
+				() -> PickupRequest.builder()
+					.currentFloor(1)
+					.destinationFloor(wrongFloor)
+					.build());
+
+			assertThat(exception.getMessage()).contains("Floor number has to be in range ");
+		});
 	}
 }
