@@ -37,6 +37,8 @@ interaction with it is done via REST.
 To keep it simple, I've decided to have maximum 10 floors and maximum 10 open
 pickup requests per elevator.
 
+The number of elevators can be configured in `application.properties`.
+
 ### Running the application
 
 To be able to run the application JDK 11 needs to be installed. Then it can be
