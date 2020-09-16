@@ -1,6 +1,7 @@
 package it.lexpon.elevatorcontrolsystem.domainobject;
 
 import static it.lexpon.elevatorcontrolsystem.domainobject.Direction.*;
+import static it.lexpon.elevatorcontrolsystem.domainobject.Elevator.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -60,7 +61,10 @@ public class ElevatorTest {
 			.build();
 
 		// THEN 
-		Exception exception = assertThrows(IllegalStateException.class, () -> IntStream.range(0, 11).forEach(i -> elevator.addRequest(pickupRequestToSend)));
+		Exception exception = assertThrows(IllegalStateException.class,
+
+			// WHEN
+			() -> IntStream.range(0, 11).forEach(i -> elevator.addRequest(pickupRequestToSend)));
 
 		assertThat(exception.getMessage()).contains("Too many pickupRequests for elevator. Can handle maximum ");
 	}
@@ -121,6 +125,39 @@ public class ElevatorTest {
 
 		// THEN
 		assertThat(elevator.getCurrentFloor()).isEqualTo(4);
+	}
+
+
+	@Test
+	public void shouldNotMoveElevatorBelowMin() {
+		// GIVEN
+		Elevator elevator = Elevator.create(1);
+
+		// THEN
+		Exception exception = assertThrows(RuntimeException.class,
+
+			// WHEN
+			elevator::floorDown);
+
+		assertThat(exception.getMessage()).contains("Floor number cannot be lower than ");
+
+	}
+
+
+	@Test
+	public void shouldNotMoveElevatorAboveMax() {
+		// GIVEN
+		Elevator elevator = Elevator.create(1);
+		elevator.changeFloor(MAX_FLOOR_NUMBER);
+
+		// THEN
+		Exception exception = assertThrows(RuntimeException.class,
+
+			// WHEN
+			elevator::floorUp);
+
+		assertThat(exception.getMessage()).contains("Floor number cannot be bigger than ");
+
 	}
 
 

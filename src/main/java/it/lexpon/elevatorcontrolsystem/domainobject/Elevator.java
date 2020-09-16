@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Elevator {
 
 	public final static int MAX_FLOOR_NUMBER = 10;
+	public final static int MIN_FLOOR_NUMBER = 0;
 	public final static int MAX_OPEN_PICKUP_REQUESTS = 10;
 
 	private final Integer id;
@@ -35,7 +36,7 @@ public class Elevator {
 	public static Elevator create(Integer id) {
 		return Elevator.builder()
 			.id(id)
-			.currentFloor(0)
+			.currentFloor(MIN_FLOOR_NUMBER)
 			.direction(NONE)
 			.pickupRequestsOpen(new ArrayList<>())
 			.pickupRequestsInProgress(new ArrayList<>())
@@ -85,7 +86,7 @@ public class Elevator {
 
 	public void floorUp() {
 		if (currentFloor >= MAX_FLOOR_NUMBER) {
-			throw new RuntimeException(String.format("Floor cannot be bigger than %d", MAX_FLOOR_NUMBER));
+			throw new RuntimeException(String.format("Floor number cannot be bigger than %d", MAX_FLOOR_NUMBER));
 		}
 		log.info("Moving elevator one floor up. {}", this);
 		currentFloor++;
@@ -93,8 +94,8 @@ public class Elevator {
 
 
 	public void floorDown() {
-		if (currentFloor <= 0) {
-			throw new RuntimeException("Floor cannot get negative");
+		if (currentFloor <= MIN_FLOOR_NUMBER) {
+			throw new RuntimeException(String.format("Floor number cannot be lower than %d", MIN_FLOOR_NUMBER));
 		}
 		log.info("Moving elevator one floor down. {}", this);
 		currentFloor--;
